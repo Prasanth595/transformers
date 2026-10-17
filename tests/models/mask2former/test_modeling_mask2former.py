@@ -348,6 +348,20 @@ class Mask2FormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestC
             elif model.__class__.__name__ == "Mask2FormerForUniversalSegmentation":
                 self.assertEqual(model.model.pixel_level_module.encoder.out_indices, [1, 2, 3])
 
+    def test_input_projections_are_registered_modules(self):
+        config = self.model_tester.get_config()
+        config.enforce_input_projection = True
+
+        for model_class in self.all_model_classes:
+            model = model_class(config).to(torch_device).eval()
+
+            projection_parameters = [key for key in model.state_dict() if ".input_projections." in key]
+            self.assertTrue(
+                projection_parameters,
+                "input_projections should be registered with `nn.ModuleList` so their parameters are tracked "
+                "by `model.parameters()`, moved by `model.to(device)` and included in the state dict",
+            )
+
 
 TOLERANCE = 2e-4
 
